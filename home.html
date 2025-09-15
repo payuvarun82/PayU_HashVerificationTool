@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayU Hash Verification Tool</title>
+    <!-- Add SHA-512 library (from crypto-js) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            /* Main colors - neutral, works in both dark and light environments */
+            --bg-color: #2a2d3e;
+            --card-bg: #343a4f;
+            --text-color: #f1f5f9;
+            --text-muted: #94a3b8;
+            --input-bg: #1e2132;
+            --input-border: #4b5563;
+            --input-text: #e2e8f0;
+            
+            /* Accent colors */
+            --primary-color: #60a5fa;
+            --primary-dark: #3b82f6;
+            --primary-light: #93c5fd;
+            --secondary-color: #10b981;
+            --secondary-dark: #059669;
+            --error-color: #f87171;
+            --error-light: #fee2e2;
+            --warning-color: #fbbf24;
+            --warning-light: #fef3c7;
+            --success-color: #34d399;
+            --success-light: #d1fae5;
+            
+            /* UI elements */
+            --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --card-shadow-hover: 0 20px 35px -5px rgba(0, 0, 0, 0.4), 0 8px 12px -2px rgba(0, 0, 0, 0.1);
+            --border-radius: 12px;
+            --border-radius-lg: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            background: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            min-height: 100vh;
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .hero-section {
+            text-align: center;
+            margin-bottom: 40px;
+            color: var(--text-color);
+            padding: 20px 0;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--card-shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        
+        .hero-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            position: relative;
+            display: inline-block;
+        }
+        
+        .hero-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            border-radius: 3px;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.2rem;
+            font-weight: 400;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 20px auto 0;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--card-shadow);
+            padding: 32px;
+            margin-bottom: 24px;
+            transition: var(--transition);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+        }
+        
+        .card:hover {
+            box-shadow: var(--card-shadow-hover);
+            transform: translateY(-2px);
+        }
+        
+        .card-header {
+            margin-bottom: 28px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+        }
+        
+        .card-title {
+            color: var(--text-color);
+            font-weight: 600;
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .card-title i {
+            color: var(--primary-color);
+            font-size: 1.4rem;
+        }
+        
+        .card-subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-weight: 400;
+        }
+        
+        .notice {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%);
+            border-left: 4px solid var(--primary-color);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-bottom: 28px;
+            font-size: 0.95rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .notice::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%);
+            pointer-events: none;
+        }
+        
+        .notice strong {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: var(--primary-light);
+        }
+        
+        .notice strong i {
+            font-size: 1.1rem;
+        }
+        
+        .notice code {
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px 16px;
+            border-radius: 8px;
+            display: block;
+            margin-top: 8px;
+            word-break: break-all;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+            line-height: 1.5;
+            font-size: 0.85rem;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            color: var(--text-color);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .input-group {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .input-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .input-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-color);
+            font-size: 0.9rem;
+        }
+        
+        .input-group label i {
+            color: var(--primary-color);
+            font-size: 1rem;
+        }
+        
+        .input-group input, 
+        .input-group select, 
+        .input-group textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--input-border);
+            border-radius: var(--border-radius);
+            font-size: 0.95rem;
+            transition: var(--transition);
+            background: var(--input-bg);
+            color: var(--input-text);
+            font-family: inherit;
+            font-weight: 400;
+        }
+        
+        .input-group textarea {
+            resize: vertical;
+            min-height: 140px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+        
+        .input-group input:focus, 
+        .input-group select:focus, 
+        .input-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: rgba(30, 33, 50, 0.8);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        .input-group input:required:not(:placeholder-shown):valid,
+        .input-group select:required:valid {
+            border-color: var(--success-color);
+            background: rgba(16, 185, 129, 0.1);
+        }
+        
+        .input-group input:required:not(:placeholder-shown):invalid {
+            border-color: var(--error-color);
+            background: rgba(239, 68, 68, 0.1);
+        }
+        
+        .salt-field {
+            border-left: 4px solid var(--warning-color) !important;
+            background: rgba(245, 158, 11, 0.1) !important;
+        }
+        
+        .salt-field:focus {
+            border-color: var(--warning-color) !important;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2) !important;
+        }
+        
+        .conditional-field {
+            display: none;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: var(--transition);
+        }
+        
+        .conditional-field.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+            min-width: 160px;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        button:hover::before {
+            left: 100%;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button i {
+            font-size: 1rem;
+        }
+        
+        .parse-button {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--secondary-dark) 100%);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        
+        .parse-button:hover {
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+        
+        .clear-button {
+            background: linear-gradient(135deg, var(--warning-color) 0%, #d97706 100%);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+        
+        .clear-button:hover {
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+        }
+        
+        .verification-result, .parse-result {
+            font-weight: 500;
+            padding: 24px;
+            border-radius: var(--border-radius);
+            margin-top: 28px;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        @keyframes slideInUp {
+            from { 
+                opacity: 0; 
+                transform: translateY(20px);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .verification-success, .parse-success {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+            border-left: 4px solid var(--success-color);
+            color: var(--success-color);
+        }
+        
+        .verification-error, .parse-error {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);
+            border-left: 4px solid var(--error-color);
+            color: var(--error-color);
+        }
+        
+        .verification-details {
+            margin-top: 20px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            word-break: break-all;
+            line-height: 1.6;
+            border: 1px solid rgba(255,255,255,0.05);
+            color: var(--text-color);
+        }
+        
+        .verification-details strong {
+            color: var(--primary-light);
+            font-weight: 600;
+        }
+        
+        .debug-info {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--text-muted);
+            color: var(--text-color);
+        }
+        
+        .debug-info strong {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+        
+        .callback-help {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%);
+            border-left: 4px solid var(--warning-color);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-bottom: 24px;
+            font-size: 0.9rem;
+            position: relative;
+            color: var(--text-color);
+        }
+        
+        .formula-note {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+            border-left: 4px solid var(--success-color);
+            padding: 16px;
+            border-radius: var(--border-radius);
+            margin-top: 16px;
+            font-size: 0.9rem;
+            color: var(--success-color);
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .status-success {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success-color);
+        }
+        
+        .status-warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning-color);
+        }
+        
+        .feature-highlight {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--primary-light);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin: 2px;
+        }
+        
+        /* Enhanced Responsive Design */
+        @media screen and (max-width: 768px) {
+            .hero-title {
+                font-size: 2rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1rem;
+            }
+            
+            .card {
+                padding: 24px;
+                margin-bottom: 20px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        
+        @media screen and (max-width: 480px) {
+            body {
+                padding: 12px;
+            }
+            
+            .hero-title {
+                font-size: 1.8rem;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .notice code {
+                font-size: 0.8rem;
+                padding: 10px 12px;
+            }
+        }
+        
+        /* Accessibility improvements */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        
+        /* Focus management for better accessibility */
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+        
+        /* New formula badge */
+        .new-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 4px rgba(244, 63, 94, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <h1 class="hero-title">
+                <i class="fas fa-shield-alt"></i>
+                PayU Hash Verification Tool
+            </h1>
+            <p class="hero-subtitle">
+                Advanced callback data parser and hash verification system with intelligent field mapping
+            </p>
+        </div>
+
+        <!-- Callback Data Parser Section -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <i class="fas fa-download"></i>
+                    Callback Data Parser
+                </h2>
+                <p class="card-subtitle">Paste your PayU callback response data to auto-fill the form below</p>
+            </div>
+            
+            <div class="callback-help">
+                <strong><i class="fas fa-info-circle"></i> Supported Formats & Features:</strong><br>
+                <div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px;">
+                    <span class="feature-highlight"><i class="fas fa-link"></i> URL Parameters</span>
+                    <span class="feature-highlight"><i class="fas fa-unlock"></i> URL-Encoded Data</span>
+                    <span class="feature-highlight"><i class="fas fa-code"></i> JSON Format</span>
+                    <span class="feature-highlight"><i class="fab fa-php"></i> PHP Array</span>
+                    <span class="feature-highlight"><i class="fas fa-list"></i> Key-Value Pairs</span>
+                </div>
+                <div style="margin-top: 16px;">
+                    <strong>Auto URL Decoding:</strong> Automatically decodes + → space, %40 → @, %3A → :, etc.<br>
+                    <strong>Smart Field Mapping:</strong> additionalCharges → additional_charges, splitInfo → splitInfo<br>
+                    <strong>Usage:</strong> Select hash formula → Paste data → Parse & Fill → Enter SALT → Verify
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="input-group full-width">
+                    <label for="callbackData">
+                        <i class="fas fa-clipboard"></i>
+                        Callback Response Data
+                    </label>
+                    <textarea id="callbackData" placeholder="Paste your callback data here...
+
+Examples:
+📎 URL format: status=success&amount=10.00&txnid=T12345&key=gtKFFx...
+🔓 URL-encoded: status=success&email=test%40example.com&productinfo=Product+Info&amount=10.00
+📄 JSON format: {'status': 'success', 'amount': '10.00', 'txnid': 'T12345'}
+🐘 PHP Array: [additionalCharges] => 10.00
+           [splitInfo] => {'splitStatus':'splitNotReceived'}"></textarea>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button type="button" class="parse-button" onclick="parseAndFillForm()">
+                    <i class="fas fa-magic"></i>
+                    Parse & Fill Form
+                </button>
+                <button type="button" class="clear-button" onclick="clearAllFields()">
+                    <i class="fas fa-eraser"></i>
+                    Clear All Fields
+                </button>
+            </div>
+            
+            <div id="parseResult" class="parse-result"></div>
+        </div>
+        
+        <!-- Hash Verification Section -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <i class="fas fa-shield-alt"></i>
+                    Hash Verification System
+                </h2>
+                <p class="card-subtitle">Verify payment response hash values with multiple algorithm variations</p>
+            </div>
+            
+            <!-- Hash Type Selection -->
+            <div class="form-row">
+                <div class="input-group">
+                    <label for="hashType">
+                        <i class="fas fa-list"></i>
+                        Hash Verification Type
+                    </label>
+                    <select id="hashType" name="hashType" onchange="updateHashLogic()" required>
+                        <option value="normal">Normal Reverse Hash Verification</option>
+                        <option value="additional_charges">Additional Charges Reverse Hash Verification</option>
+                        <option value="split">Split Reverse Hash Verification</option>
+                        <option value="combined">Combined Split & Additional Charges Reverse Hash Verification <span class="new-badge"></span></option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="hashLogicNotice" class="notice">
+                <strong>
+                    <i class="fas fa-cogs"></i>
+                    Hash Verification Logic
+                </strong>
+                <code id="hashLogicCode">sha512(SALT|status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key)</code>
+            </div>
+            
+            <form id="hashVerificationForm" class="verify-form">
+                <!-- Conditional Fields for Additional Charges and Split Info -->
+                <div class="form-row">
+                    <div id="additionalChargesField" class="input-group conditional-field">
+                        <label for="additional_charges">
+                            <i class="fas fa-dollar-sign"></i>
+                            Additional Charges
+                        </label>
+                        <input type="text" id="additional_charges" name="additional_charges" 
+                               placeholder="Enter additional charges amount">
+                    </div>
+                    <div id="splitInfoField" class="input-group conditional-field">
+                        <label for="splitInfo">
+                            <i class="fas fa-code-branch"></i>
+                            Split Info
+                        </label>
+                        <input type="text" id="splitInfo" name="splitInfo" 
+                               placeholder="Enter split information JSON">
+                    </div>
+                </div>
+                
+                <!-- Core Hash Fields -->
+                <div class="form-row">
+                    <div class="input-group">
+                        <label for="salt">
+                            <i class="fas fa-key"></i>
+                            SALT (Manual Entry Required)
+                            <span class="status-indicator status-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Required
+                            </span>
+                        </label>
+                        <input type="text" id="salt" name="salt" 
+                               class="salt-field"
+                               placeholder="Enter your PayU SALT manually" 
+                               required>
+                    </div>
+                    <div class="input-group">
+                        <label for="status">
+                            <i class="fas fa-info-circle"></i>
+                            Transaction Status
+                        </label>
+                        <input type="text" id="status" name="status" 
+                               placeholder="success, failure, pending"
+                               required>
+                    </div>
+                </div>
+                
+                <!-- UDF Fields -->
+                <div class="form-row">
+                    <div class="input-group">
+                        <label for="udf5">
+                            <i class="fas fa-tag"></i>
+                            UDF5 (Optional)
+                        </label>
+                        <input type="text" id="udf5" name="udf5" 
+                               placeholder="User Defined Field 5">
+                    </div>
+                    <div class="input-group">
+                        <label for="udf4">
+                            <i class="fas fa-tag"></i>
+                            UDF4 (Optional)
+                        </label>
+                        <input type="text" id="udf4" name="udf4" 
+                               placeholder="User Defined Field 4">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="input-group">
+                        <label for="udf3">
+                            <i class="fas fa-tag"></i>
+                            UDF3 (Optional)
+                        </label>
+                        <input type="text" id="udf3" name="udf3" 
+                               placeholder="User Defined Field 3">
+                    </div>
+                    <div class="input-group">
+                        <label for="udf2">
+                            <i class="fas fa-tag"></i>
+                            UDF2 (Optional)
+                        </label>
+                        <input type="text" id="udf2" name="udf2" 
+                               placeholder="User Defined Field 2">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="input-group">
+                        <label for="udf1">
+                            <i class="fas fa-tag"></i>
+                            UDF1 (Optional)
+                        </label>
+                        <input type="text" id="udf1" name="udf1" 
+                               placeholder="User Defined Field 1">
+                    </div>
+                    <div class="input-group">
+                        <label for="email">
+                            <i class="fas fa-envelope"></i>
+                            Email Address
+                        </label>
+                        <input type="email" id="email" name="email" 
+                               placeholder="customer@example.com"
+                               required>
+                    </div>
+                </div>
+                
+                <!-- Customer & Transaction Details -->
+                <div class="form-row">
+                    <div class="input-group">
+                        <label for="firstname">
+                            <i class="fas fa-user"></i>
+                            First Name
+                        </label>
+                        <input type="text" id="firstname" name="firstname" 
+                               placeholder="Customer first name"
+                               required>
+                    </div>
+                    <div class="input-group">
+                        <label for="productinfo">
+                            <i class="fas fa-box"></i>
+                            Product Info
+                        </label>
+                        <input type="text" id="productinfo" name="productinfo" 
+                               placeholder="Product description"
+                               required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="input-group">
+                        <label for="amount">
+                            <i class="fas fa-rupee-sign"></i>
+                            Amount
+                        </label>
+                        <input type="text" id="amount" name="amount" 
+                               placeholder="10.00"
+                               required>
+                    </div>
+                    <div class="input-group">
+                        <label for="txnid">
+                            <i class="fas fa-hashtag"></i>
+                            Transaction ID
+                        </label>
+                        <input type="text" id="txnid" name="txnid" 
+                               placeholder="Unique transaction identifier"
+                               required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="input-group">
+                        <label for="key">
+                            <i class="fas fa-key"></i>
+                            Merchant Key
+                        </label>
+                        <input type="text" id="key" name="key" 
+                               placeholder="PayU merchant key"
+                               required>
+                    </div>
+                    <div class="input-group">
+                        <label for="responseHash">
+                            <i class="fas fa-fingerprint"></i>
+                            Response Hash
+                        </label>
+                        <input type="text" id="responseHash" name="responseHash" 
+                               placeholder="Hash received in PayU response"
+                               required>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button type="button" onclick="verifyHash()">
+                        <i class="fas fa-check-circle"></i>
+                        Verify Hash
+                    </button>
+                </div>
+            </form>
+            
+            <div id="verificationResult" class="verification-result"></div>
+        </div>
+    </div>
+
+    <!-- Enhanced JavaScript with all original functionality preserved -->
+    <script>
+        // Enhanced field mapping for callback data parsing with both camelCase and snake_case support
+        const fieldMapping = {
+            'status': 'status',
+            'firstname': 'firstname',
+            'email': 'email',
+            'productinfo': 'productinfo',
+            'amount': 'amount',
+            'txnid': 'txnid',
+            'key': 'key',
+            'hash': 'responseHash',
+            'udf1': 'udf1',
+            'udf2': 'udf2',
+            'udf3': 'udf3',
+            'udf4': 'udf4',
+            'udf5': 'udf5',
+            // Additional Charges mapping - both camelCase and snake_case
+            'additionalcharges': 'additional_charges',     // Response: additionalCharges (lowercase)
+            'additional_charges': 'additional_charges',   // Already snake_case
+            // Split Info mapping - multiple variations with comprehensive coverage
+            'splitinfo': 'splitInfo',                     // Response: splitInfo (lowercase)
+            'split_info': 'splitInfo',                    // Alternative snake_case
+            'splitInfo': 'splitInfo'                      // Exact case match for camelCase
+        };
+        
+        function parseAndFillForm() {
+            const callbackData = document.getElementById('callbackData').value.trim();
+            const resultDiv = document.getElementById('parseResult');
+            
+            if (!callbackData) {
+                showParseResult('<i class="fas fa-exclamation-triangle"></i> Please paste callback data first.', false);
+                return;
+            }
+            
+            // Get the currently selected hash type BEFORE parsing
+            const currentHashType = document.getElementById('hashType').value;
+            
+            try {
+                let parsedData = {};
+                let parseMethod = '';
+                
+                // Try to detect and parse different formats
+                if (callbackData.startsWith('{') || callbackData.startsWith('[')) {
+                    // JSON format
+                    try {
+                        parsedData = JSON.parse(callbackData);
+                        parseMethod = 'JSON';
+                    } catch (e) {
+                        throw new Error('Invalid JSON format');
+                    }
+                } else if (callbackData.includes('] =>')) {
+                    // PHP Array format: [key] => value
+                    parseMethod = 'PHP Array (print_r style)';
+                    const lines = callbackData.split('\n').filter(line => line.trim());
+                    
+                    lines.forEach(line => {
+                        const trimmedLine = line.trim();
+                        // Match pattern: [key] => value (improved regex to handle complex values)
+                        const match = trimmedLine.match(/^\s*\[([^\]]+)\]\s*=>\s*(.*)$/);
+                        if (match) {
+                            const key = match[1].trim();
+                            let value = match[2].trim();
+                            
+                            // Don't treat JSON objects or arrays as empty
+                            // Only skip if it's actually empty, 'Array', or starts with opening parenthesis for nested arrays
+                            if (value === '' || value === 'Array') {
+                                value = '';
+                            } else if (value.startsWith('(') && !value.startsWith('(')) {
+                                // This is for nested arrays like Array ( ... ), but preserve JSON objects
+                                value = '';
+                            }
+                            
+                            parsedData[key] = value;
+                        }
+                    });
+                } else if (callbackData.includes('=') && (callbackData.includes('&') || callbackData.includes('\n') || !callbackData.includes(' '))) {
+                    // URL parameters format (including URL-encoded data)
+                    const isUrlEncoded = callbackData.includes('%') || callbackData.includes('+');
+                    parseMethod = isUrlEncoded ? 'URL-Encoded Parameters' : 'URL Parameters';
+                    
+                    const params = callbackData.split(/[&\n]/).filter(param => param.trim());
+                    
+                    params.forEach(param => {
+                        const [key, ...valueParts] = param.split('=');
+                        if (key && valueParts.length > 0) {
+                            let value = valueParts.join('='); // Join back in case value contains '='
+                            
+                            try {
+                                // First handle + signs (space replacement in URL encoding)
+                                value = value.replace(/\+/g, ' ');
+                                
+                                // Then decode URL encoding (handles %20, %40, %3A, etc.)
+                                value = decodeURIComponent(value.trim());
+                                
+                            } catch (e) {
+                                // If decoding fails, use raw value
+                                console.warn('URL decode failed for:', value, e);
+                                value = value.trim();
+                            }
+                            
+                            parsedData[key.trim()] = value;
+                        }
+                    });
+                } else {
+                    // Try to parse as key-value pairs separated by newlines or spaces
+                    parseMethod = 'Key-Value Pairs';
+                    const lines = callbackData.split(/[\n,;]/).filter(line => line.trim());
+                    
+                    // Improved parsing logic to handle JSON values properly
+                    let currentKey = null;
+                    let currentValue = '';
+                    let inJsonObject = false;
+                    let bracketDepth = 0;
+                    
+                    lines.forEach(line => {
+                        const trimmedLine = line.trim();
+                        if (!trimmedLine) return;
+                        
+                        // Check if we're continuing a JSON object from previous line
+                        if (inJsonObject) {
+                            currentValue += ' ' + trimmedLine;
+                            
+                            // Count brackets to determine when JSON object ends
+                            for (let i = 0; i < trimmedLine.length; i++) {
+                                if (trimmedLine[i] === '{' || trimmedLine[i] === '[') {
+                                    bracketDepth++;
+                                } else if (trimmedLine[i] === '}' || trimmedLine[i] === ']') {
+                                    bracketDepth--;
+                                }
+                            }
+                            
+                            // If we've closed all brackets, the JSON object is complete
+                            if (bracketDepth <= 0) {
+                                inJsonObject = false;
+                                if (currentKey) {
+                                    parsedData[currentKey] = currentValue.trim();
+                                    currentKey = null;
+                                    currentValue = '';
+                                }
+                            }
+                            return;
+                        }
+                        
+                        // Look for key-value separator
+                        const colonIndex = trimmedLine.indexOf(':');
+                        const equalIndex = trimmedLine.indexOf('=');
+                        
+                        let separator = -1;
+                        if (colonIndex !== -1 && (equalIndex === -1 || colonIndex < equalIndex)) {
+                            separator = colonIndex;
+                        } else if (equalIndex !== -1) {
+                            separator = equalIndex;
+                        }
+                        
+                        if (separator !== -1) {
+                            const key = trimmedLine.substring(0, separator).trim();
+                            const value = trimmedLine.substring(separator + 1).trim();
+                            
+                            if (key && value) {
+                                // Check if the value looks like a JSON object or array
+                                if ((value.startsWith('{') && !value.endsWith('}')) || 
+                                    (value.startsWith('[') && !value.endsWith(']')) ||
+                                    (value.includes('{') && !value.includes('}'))) {
+                                    // This is likely a multi-line JSON object
+                                    currentKey = key;
+                                    currentValue = value;
+                                    inJsonObject = true;
+                                    bracketDepth = 0;
+                                    
+                                    // Count initial brackets
+                                    for (let i = 0; i < value.length; i++) {
+                                        if (value[i] === '{' || value[i] === '[') {
+                                            bracketDepth++;
+                                        } else if (value[i] === '}' || value[i] === ']') {
+                                            bracketDepth--;
+                                        }
+                                    }
+                                    
+                                    // If brackets are already balanced, it's a complete JSON
+                                    if (bracketDepth <= 0) {
+                                        inJsonObject = false;
+                                        parsedData[key] = value;
+                                        currentKey = null;
+                                        currentValue = '';
+                                    }
+                                } else {
+                                    // Regular key-value pair
+                                    parsedData[key] = value;
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Handle case where JSON object wasn't properly closed
+                    if (inJsonObject && currentKey && currentValue) {
+                        parsedData[currentKey] = currentValue.trim();
+                    }
+                }
+                
+                // Fill the form fields based on current selection
+                let filledFields = [];
+                let skippedFields = [];
+                let formulaSpecificFields = [];
+                
+                // Define which fields are relevant for each formula type (using lowercase for comparison)
+                const relevantFields = {
+                    'normal': ['status', 'firstname', 'email', 'productinfo', 'amount', 'txnid', 'key', 'hash', 'udf1', 'udf2', 'udf3', 'udf4', 'udf5'],
+                    'additional_charges': ['status', 'firstname', 'email', 'productinfo', 'amount', 'txnid', 'key', 'hash', 'udf1', 'udf2', 'udf3', 'udf4', 'udf5', 'additionalcharges', 'additional_charges'],
+                    'split': ['status', 'firstname', 'email', 'productinfo', 'amount', 'txnid', 'key', 'hash', 'udf1', 'udf2', 'udf3', 'udf4', 'udf5', 'splitinfo', 'split_info'],
+                    'combined': ['status', 'firstname', 'email', 'productinfo', 'amount', 'txnid', 'key', 'hash', 'udf1', 'udf2', 'udf3', 'udf4', 'udf5', 'additionalcharges', 'additional_charges', 'splitinfo', 'split_info']
+                };
+                
+                Object.keys(parsedData).forEach(key => {
+                    const keyLower = key.toLowerCase();
+                    const fieldId = fieldMapping[keyLower];
+                    if (fieldId && fieldId !== 'salt') { // Never auto-fill salt
+                        // Check if this field is relevant for the current formula
+                        const isRelevantField = relevantFields[currentHashType].includes(keyLower);
+                        
+                        if (isRelevantField) {
+                            const element = document.getElementById(fieldId);
+                            if (element) {
+                                element.value = parsedData[key];
+                                filledFields.push(key);
+                                
+                                // Track formula-specific fields
+                                if (keyLower === 'additionalcharges' || keyLower === 'additional_charges' || keyLower === 'splitinfo' || keyLower === 'split_info') {
+                                    formulaSpecificFields.push(key);
+                                }
+                                
+                                // Trigger any change events
+                                element.dispatchEvent(new Event('change'));
+                            }
+                        } else {
+                            skippedFields.push(key + ' (not relevant for ' + currentHashType + ')');
+                        }
+                    } else if (keyLower !== 'salt') {
+                        skippedFields.push(key + ' (unmapped field)');
+                    }
+                });
+                
+                // Auto-switch logic based on formula specific fields detected
+                let hashTypeSwitched = false;
+                if (currentHashType === 'normal') {
+                    const additionalCharges = document.getElementById('additional_charges').value.trim();
+                    const splitInfo = document.getElementById('splitInfo').value.trim();
+                    const hashTypeSelect = document.getElementById('hashType');
+                    
+                    if (additionalCharges && splitInfo) {
+                        // If both are present, use the combined formula
+                        hashTypeSelect.value = 'combined';
+                        hashTypeSwitched = true;
+                    } else if (additionalCharges) {
+                        hashTypeSelect.value = 'additional_charges';
+                        hashTypeSwitched = true;
+                    } else if (splitInfo) {
+                        hashTypeSelect.value = 'split';
+                        hashTypeSwitched = true;
+                    }
+                    
+                    // Update the hash logic display if switched
+                    if (hashTypeSwitched) {
+                        updateHashLogic();
+                    }
+                }
+                
+                // Show success message
+                let message = `<i class="fas fa-check-circle"></i> Successfully parsed <strong>${parseMethod}</strong> format!<br><br>`;
+                
+                // Add URL decoding info if applicable
+                if (parseMethod === 'URL-Encoded Parameters') {
+                    message += `<strong><i class="fas fa-unlock"></i> URL Decoding Applied:</strong> Automatically decoded URL-encoded values (+ → space, %40 → @, %3A → :, etc.)<br>`;
+                }
+                
+                message += `<strong>Current Formula:</strong> <span class="status-indicator status-success">${currentHashType.replace('_', ' ').toUpperCase()}</span><br>`;
+                message += `<strong>Filled ${filledFields.length} fields:</strong> ${filledFields.join(', ')}<br>`;
+                
+                if (hashTypeSwitched) {
+                    message += `<strong><i class="fas fa-sync-alt"></i> Auto-switched to:</strong> <span class="status-indicator status-success">${document.getElementById('hashType').value.replace('_', ' ').toUpperCase()}</span> (found specific fields)<br>`;
+                }
+                
+                if (formulaSpecificFields.length > 0) {
+                    message += `<strong><i class="fas fa-magic"></i> Formula-specific fields found:</strong> ${formulaSpecificFields.join(', ')}<br>`;
+                }
+                
+                if (skippedFields.length > 0) {
+                    message += `<strong>Skipped ${skippedFields.length} fields:</strong> ${skippedFields.slice(0, 8).join(', ')}`;
+                    if (skippedFields.length > 8) {
+                        message += ` and ${skippedFields.length - 8} more...`;
+                    }
+                    message += '<br>';
+                }
+                
+                message += '<br><strong><i class="fas fa-exclamation-triangle"></i> Remember:</strong> Please manually enter your SALT value before verification.';
+                
+                showParseResult(message, true);
+                
+                // Add formula note if user manually selected a specific formula
+                if (!hashTypeSwitched && currentHashType !== 'normal') {
+                    const formulaNote = document.createElement('div');
+                    formulaNote.className = 'formula-note';
+                    formulaNote.innerHTML = `<i class="fas fa-info-circle"></i> <strong>Note:</strong> Parsing was done according to your selected formula: <strong>${currentHashType.replace('_', ' ').toUpperCase()}</strong>. Only relevant fields were filled.`;
+                    document.getElementById('parseResult').appendChild(formulaNote);
+                }
+                
+                // Add debug info for additionalCharges specifically
+                if ((currentHashType === 'additional_charges' || currentHashType === 'combined' || hashTypeSwitched) && document.getElementById('additional_charges').value) {
+                    const additionalChargesValue = document.getElementById('additional_charges').value;
+                    if (additionalChargesValue) {
+                        const debugNote = document.createElement('div');
+                        debugNote.className = 'formula-note';
+                        debugNote.innerHTML = `<i class="fas fa-dollar-sign"></i> <strong>Additional Charges Found:</strong> ${additionalChargesValue}`;
+                        document.getElementById('parseResult').appendChild(debugNote);
+                    }
+                }
+                
+                // Add debug info for splitInfo specifically
+                if ((currentHashType === 'split' || currentHashType === 'combined' || hashTypeSwitched) && document.getElementById('splitInfo').value) {
+                    const splitInfoValue = document.getElementById('splitInfo').value;
+                    if (splitInfoValue) {
+                        const debugNote = document.createElement('div');
+                        debugNote.className = 'formula-note';
+                        debugNote.innerHTML = `<i class="fas fa-code-branch"></i> <strong>Split Info Found:</strong> ${splitInfoValue.length > 100 ? splitInfoValue.substring(0, 100) + '...' : splitInfoValue}`;
+                        document.getElementById('parseResult').appendChild(debugNote);
+                    }
+                }
+                
+                // Scroll to verification form
+                document.getElementById('hashVerificationForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+            } catch (error) {
+                showParseResult(`<i class="fas fa-times-circle"></i> Failed to parse callback data: ${error.message}<br><br>Please check the format and try again.`, false);
+            }
+        }
+        
+        function showParseResult(message, isSuccess) {
+            const resultDiv = document.getElementById('parseResult');
+            resultDiv.className = isSuccess ? 'parse-result parse-success' : 'parse-result parse-error';
+            resultDiv.innerHTML = message;
+            resultDiv.style.display = 'block';
+        }
+        
+        function clearAllFields() {
+            // Clear callback data
+            document.getElementById('callbackData').value = '';
+            
+            // Clear all form fields except salt (user might want to keep it)
+            const formFields = [
+                'status', 'firstname', 'email', 'productinfo', 'amount', 'txnid', 'key', 'responseHash',
+                'udf1', 'udf2', 'udf3', 'udf4', 'udf5', 'additional_charges', 'splitInfo'
+            ];
+            
+            if (confirm('Clear all fields? (Salt will be preserved)')) {
+                formFields.forEach(fieldId => {
+                    const element = document.getElementById(fieldId);
+                    if (element) {
+                        element.value = '';
+                    }
+                });
+                
+                // Reset hash type to normal
+                document.getElementById('hashType').value = 'normal';
+                updateHashLogic();
+                
+                // Hide result divs
+                document.getElementById('parseResult').style.display = 'none';
+                document.getElementById('verificationResult').style.display = 'none';
+                
+                showParseResult('<i class="fas fa-check-circle"></i> All fields cleared successfully!', true);
+            }
+        }
+        
+        function updateHashLogic() {
+            var hashType = document.getElementById('hashType').value;
+            var hashLogicCode = document.getElementById('hashLogicCode');
+            var additionalChargesField = document.getElementById('additionalChargesField');
+            var splitInfoField = document.getElementById('splitInfoField');
+            
+            // Hide all conditional fields first
+            additionalChargesField.classList.remove('active');
+            splitInfoField.classList.remove('active');
+            
+            // Show appropriate fields and update logic based on selection
+            switch(hashType) {
+                case 'normal':
+                    hashLogicCode.textContent = 'sha512(SALT|status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key)';
+                    break;
+                case 'additional_charges':
+                    additionalChargesField.classList.add('active');
+                    hashLogicCode.textContent = 'sha512(additional_charges|SALT|status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key)';
+                    break;
+                case 'split':
+                    splitInfoField.classList.add('active');
+                    hashLogicCode.textContent = 'sha512(SALT|status|splitInfo||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key)';
+                    break;
+                case 'combined':
+                    additionalChargesField.classList.add('active');
+                    splitInfoField.classList.add('active');
+                    hashLogicCode.textContent = 'sha512(additional_charges|SALT|status|splitInfo||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key)';
+                    break;
+            }
+        }
+        
+        function verifyHash() {
+            // Get form values and handle them carefully
+            var hashType = document.getElementById('hashType').value;
+            var additional_charges = document.getElementById('additional_charges').value.trim() || "";
+            var splitInfo = document.getElementById('splitInfo').value.trim() || "";
+            var salt = document.getElementById('salt').value.trim();
+            var status = document.getElementById('status').value.trim();
+            var udf5 = document.getElementById('udf5').value.trim() || "";
+            var udf4 = document.getElementById('udf4').value.trim() || "";
+            var udf3 = document.getElementById('udf3').value.trim() || "";
+            var udf2 = document.getElementById('udf2').value.trim() || "";
+            var udf1 = document.getElementById('udf1').value.trim() || "";
+            var email = document.getElementById('email').value.trim();
+            var firstname = document.getElementById('firstname').value.trim();
+            var productinfo = document.getElementById('productinfo').value.trim();
+            var amount = document.getElementById('amount').value.trim();
+            var txnid = document.getElementById('txnid').value.trim();
+            var key = document.getElementById('key').value.trim();
+            var responseHash = document.getElementById('responseHash').value.trim();
+            
+            // Validate required fields
+            if (!salt || !key || !responseHash || !status || !txnid || !amount || !productinfo || !firstname || !email) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            // Additional validation for specific hash types
+            if (hashType === 'additional_charges' && !additional_charges) {
+                alert('Additional charges field is required for this hash type.');
+                return;
+            }
+            
+            if (hashType === 'split' && !splitInfo) {
+                alert('Split info field is required for this hash type.');
+                return;
+            }
+            
+            if (hashType === 'combined' && (!additional_charges || !splitInfo)) {
+                alert('Both Additional charges and Split info fields are required for the Combined formula.');
+                return;
+            }
+            
+            // Try multiple hash string variations to account for common issues
+            var hashVariations = [];
+            var baseString = "";
+            
+            // Build base string based on hash type
+            switch(hashType) {
+                case 'normal':
+                    baseString = salt + "|" + status + "||||||" + udf5 + "|" + udf4 + "|" + udf3 + "|" + udf2 + "|" + udf1 + "|" + email + "|" + firstname + "|" + productinfo + "|" + amount + "|" + txnid + "|" + key;
+                    break;
+                case 'additional_charges':
+                    baseString = additional_charges + "|" + salt + "|" + status + "||||||" + udf5 + "|" + udf4 + "|" + udf3 + "|" + udf2 + "|" + udf1 + "|" + email + "|" + firstname + "|" + productinfo + "|" + amount + "|" + txnid + "|" + key;
+                    break;
+                case 'split':
+                    baseString = salt + "|" + status + "|" + splitInfo + "||||||" + udf5 + "|" + udf4 + "|" + udf3 + "|" + udf2 + "|" + udf1 + "|" + email + "|" + firstname + "|" + productinfo + "|" + amount + "|" + txnid + "|" + key;
+                    break;
+                case 'combined':
+                    baseString = additional_charges + "|" + salt + "|" + status + "|" + splitInfo + "||||||" + udf5 + "|" + udf4 + "|" + udf3 + "|" + udf2 + "|" + udf1 + "|" + email + "|" + firstname + "|" + productinfo + "|" + amount + "|" + txnid + "|" + key;
+                    break;
+            }
+            
+            // Variation 1: Standard format
+            hashVariations.push(baseString);
+            
+            // Variation 2: Handle possible different handling of empty UDFs (all empty) - only for normal hash
+            if (hashType === 'normal') {
+                var hashString2 = salt + "|" + status + "||||||||||||" + email + "|" + firstname + "|" + productinfo + "|" + amount + "|" + txnid + "|" + key;
+                hashVariations.push(hashString2);
+            } else if (hashType === 'additional_charges') {
+                var hashString2 = additional_charges + "|" + salt + "|" + status + "||||||||||||" + email + "|" + firstname + "|" + productinfo + "|" + amount + "|" + txnid + "|" + key;
+                hashVariations.push(hashString2);
+            } else if (hashType === 'split') {
+                var hashString2 = salt + "|" + status + "|" + splitInfo + "||||||||||||" + email + "|" + firstname + "|" + productinfo + "|" + amount + "|" + txnid + "|" + key;
+                hashVariations.push(hashString2);
+            } else if (hashType === 'combined') {
+                var hashString2 = additional_charges + "|" + salt + "|" + status + "|" + splitInfo + "||||||||||||" + email + "|" + firstname + "|" + productinfo + "|" + amount + "|" + txnid + "|" + key;
+                hashVariations.push(hashString2);
+            }
+            
+            // Variation 3: Try with strict null handling
+            function emptyToString(val) {
+                return (val === undefined || val === null || val === "") ? "" : val;
+            }
+            
+            var hashString3;
+            switch(hashType) {
+                case 'normal':
+                    hashString3 = salt + "|" + status + "||||||" + emptyToString(udf5) + "|" + emptyToString(udf4) + "|" + emptyToString(udf3) + "|" + emptyToString(udf2) + "|" + emptyToString(udf1) + "|" + email + "|" + firstname + "|" + productinfo + "|" + amount + "|" + txnid + "|" + key;
+                    break;
+                case 'additional_charges':
+                    hashString3 = additional_charges + "|" + salt + "|" + status + "||||||" + emptyToString(udf5) + "|" + emptyToString(udf4) + "|" + emptyToString(udf3) + "|" + emptyToString(udf2) + "|" + emptyToString(udf1) + "|" + email + "|" + firstname + "|" + productinfo + "|" + amount + "|" + txnid + "|" + key;
+                    break;
+                case 'split':
+                    hashString3 = salt + "|" + status + "|" + splitInfo + "||||||" + emptyToString(udf5) + "|" + emptyToString(udf4) + "|" + emptyToString(udf3) + "|" + emptyToString(udf2) + "|" + emptyToString(udf1) + "|" + email + "|" + firstname + "|" + productinfo + "|" + amount + "|" + txnid + "|" + key;
+                    break;
+                case 'combined':
+                    hashString3 = additional_charges + "|" + salt + "|" + status + "|" + splitInfo + "||||||" + emptyToString(udf5) + "|" + emptyToString(udf4) + "|" + emptyToString(udf3) + "|" + emptyToString(udf2) + "|" + emptyToString(udf1) + "|" + email + "|" + firstname + "|" + productinfo + "|" + amount + "|" + txnid + "|" + key;
+                    break;
+            }
+            hashVariations.push(hashString3);
+            
+            // Variation 4: Add a case-sensitive variation
+            hashVariations.push(baseString);
+            
+            // Store calculation results for all variations
+            var results = [];
+            var isValidAny = false;
+            var matchedVariation = null;
+            var matchedHash = null;
+            
+            // Try each hash string variation
+            for (var i = 0; i < hashVariations.length; i++) {
+                var currentString = hashVariations[i];
+                var calculatedHash;
+                
+                if (i === 3) {
+                    calculatedHash = CryptoJS.SHA512(currentString).toString(); // Case sensitive
+                } else {
+                    calculatedHash = CryptoJS.SHA512(currentString).toString().toLowerCase(); // Case insensitive
+                }
+                
+                var comparisonHash;
+                if (i === 3) {
+                    comparisonHash = responseHash; // Case sensitive comparison
+                } else {
+                    comparisonHash = responseHash.toLowerCase(); // Case insensitive comparison
+                }
+                
+                var isValid = calculatedHash === comparisonHash;
+                
+                results.push({
+                    string: currentString,
+                    hash: calculatedHash,
+                    isValid: isValid
+                });
+                
+                if (isValid) {
+                    isValidAny = true;
+                    matchedVariation = i + 1;
+                    matchedHash = calculatedHash;
+                }
+            }
+            
+            // Display result
+            var resultDiv = document.getElementById('verificationResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = isValidAny ? 'verification-result verification-success' : 'verification-result verification-error';
+            
+            var hashTypeDisplayName = hashType === 'normal' ? 'Normal Hash' : 
+                                     hashType === 'additional_charges' ? 'Additional Charges Reverse Hash' : 
+                                     hashType === 'split' ? 'Split Reverse Hash' :
+                                     'Combined Split & Additional Charges Hash';
+            
+            var resultHtml = isValidAny ? 
+                '<div><i class="fas fa-check-circle"></i> <strong>' + hashTypeDisplayName + ' Verification SUCCESSFUL!</strong> <span class="status-indicator status-success">Matched variation ' + matchedVariation + '</span></div>' : 
+                '<div><i class="fas fa-times-circle"></i> <strong>' + hashTypeDisplayName + ' Verification FAILED!</strong></div>';
+            
+            if (isValidAny) {
+                resultHtml += '<div class="verification-details">' +
+                    '<strong>Hash Type:</strong> ' + hashTypeDisplayName + '<br><br>' +
+                    '<strong>String for Hashing (that worked):</strong><br>' + results[matchedVariation-1].string + '<br><br>' +
+                    '<strong>Calculated Hash:</strong><br>' + matchedHash + '<br><br>' +
+                    '<strong>Response Hash:</strong><br>' + responseHash +
+                    '</div>';
+                
+                // Add info about the successful variation
+                if (matchedVariation === 1) {
+                    resultHtml += '<div class="debug-info"><i class="fas fa-info-circle"></i> <strong>Success Details:</strong> Standard hash format verification successful for ' + hashTypeDisplayName + '.</div>';
+                } else if (matchedVariation === 2) {
+                    resultHtml += '<div class="debug-info"><i class="fas fa-info-circle"></i> <strong>Success Details:</strong> Verification successful with all UDFs treated as empty for ' + hashTypeDisplayName + '.</div>';
+                } else if (matchedVariation === 3) {
+                    resultHtml += '<div class="debug-info"><i class="fas fa-info-circle"></i> <strong>Success Details:</strong> Verification successful with strict null handling for ' + hashTypeDisplayName + '.</div>';
+                } else if (matchedVariation === 4) {
+                    resultHtml += '<div class="debug-info"><i class="fas fa-info-circle"></i> <strong>Success Details:</strong> Verification successful with case-sensitive comparison for ' + hashTypeDisplayName + '.</div>';
+                }
+            } else {
+                // Show all attempted variations for debugging
+                resultHtml += '<div class="verification-details">' +
+                    '<strong>Hash Type:</strong> ' + hashTypeDisplayName + '<br><br>' +
+                    '<strong>Response Hash:</strong><br>' + responseHash + '<br><br>' +
+                    '<strong>Attempted Variations:</strong><br>';
+                    
+                for (var j = 0; j < results.length; j++) {
+                    var result = results[j];
+                    resultHtml += '<hr><strong>Variation ' + (j + 1) + ':</strong><br>' +
+                    'String: ' + result.string + '<br>' +
+                    'Hash: ' + result.hash + '<br>' +
+                    'Result: ' + (result.isValid ? "✅ Matched" : "❌ Not Matched") + '<br>';
+                }
+                
+                resultHtml += '</div>' +
+                '<div class="debug-info">' +
+                    '<strong><i class="fas fa-tools"></i> Debugging Tips:</strong><br>' +
+                    '• Double-check your SALT value<br>' +
+                    '• Verify all values match exactly what PayU sent (including case)<br>' +
+                    '• Check for any special characters or encoding issues<br>' +
+                    '• Amount format might need specific decimal places (e.g. "10.00" vs "10")<br>' +
+                    '• For ' + hashTypeDisplayName + ', ensure all required fields are properly filled' +
+                '</div>';
+            }
+            
+            resultDiv.innerHTML = resultHtml;
+            
+            // Scroll to result
+            resultDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        // Initialize the page
+        window.onload = function() {
+            updateHashLogic();
+        };
+    </script>
+</body>
+</html>
