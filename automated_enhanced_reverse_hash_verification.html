@@ -1,3 +1,5 @@
+
+​
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -743,7 +745,7 @@ Examples:
                         </label>
                         <input type="text" id="additional_charges" name="additional_charges" 
                                placeholder="Enter additional charges amount"
-                               value="<%= request.getParameter("additional_charges") != null ? request.getParameter("additional_charges") : "" %>">
+                               >
                     </div>
                     <div id="splitInfoField" class="input-group conditional-field">
                         <label for="splitInfo">
@@ -752,7 +754,7 @@ Examples:
                         </label>
                         <input type="text" id="splitInfo" name="splitInfo" 
                                placeholder="Enter split information JSON"
-                               value="<%= request.getParameter("splitInfo") != null ? request.getParameter("splitInfo") : "" %>">
+                               >
                     </div>
                 </div>
                 
@@ -778,9 +780,7 @@ Examples:
                             Transaction Status
                         </label>
                         <input type="text" id="status" name="status" 
-                               placeholder="success, failure, pending"
-                               value="<%= request.getParameter("status") != null ? request.getParameter("status") : "" %>" 
-                               required>
+                               placeholder="success, failure, pending" required>
                     </div>
                 </div>
                 
@@ -793,7 +793,7 @@ Examples:
                         </label>
                         <input type="text" id="udf5" name="udf5" 
                                placeholder="User Defined Field 5"
-                               value="<%= request.getParameter("udf5") != null ? request.getParameter("udf5") : "" %>">
+                               >
                     </div>
                     <div class="input-group">
                         <label for="udf4">
@@ -802,7 +802,7 @@ Examples:
                         </label>
                         <input type="text" id="udf4" name="udf4" 
                                placeholder="User Defined Field 4"
-                               value="<%= request.getParameter("udf4") != null ? request.getParameter("udf4") : "" %>">
+                               >
                     </div>
                 </div>
                 
@@ -814,7 +814,7 @@ Examples:
                         </label>
                         <input type="text" id="udf3" name="udf3" 
                                placeholder="User Defined Field 3"
-                               value="<%= request.getParameter("udf3") != null ? request.getParameter("udf3") : "" %>">
+                               >
                     </div>
                     <div class="input-group">
                         <label for="udf2">
@@ -823,7 +823,7 @@ Examples:
                         </label>
                         <input type="text" id="udf2" name="udf2" 
                                placeholder="User Defined Field 2"
-                               value="<%= request.getParameter("udf2") != null ? request.getParameter("udf2") : "" %>">
+                               >
                     </div>
                 </div>
                 
@@ -835,7 +835,7 @@ Examples:
                         </label>
                         <input type="text" id="udf1" name="udf1" 
                                placeholder="User Defined Field 1"
-                               value="<%= request.getParameter("udf1") != null ? request.getParameter("udf1") : "" %>">
+                               >
                     </div>
                     <div class="input-group">
                         <label for="email">
@@ -843,9 +843,7 @@ Examples:
                             Email Address
                         </label>
                         <input type="email" id="email" name="email" 
-                               placeholder="customer@example.com"
-                               value="<%= request.getParameter("email") != null ? request.getParameter("email") : "" %>" 
-                               required>
+                               placeholder="customer@example.com" required>
                     </div>
                 </div>
                 
@@ -857,9 +855,7 @@ Examples:
                             First Name
                         </label>
                         <input type="text" id="firstname" name="firstname" 
-                               placeholder="Customer first name"
-                               value="<%= request.getParameter("firstname") != null ? request.getParameter("firstname") : "" %>" 
-                               required>
+                               placeholder="Customer first name" required>
                     </div>
                     <div class="input-group">
                         <label for="productinfo">
@@ -867,9 +863,7 @@ Examples:
                             Product Info
                         </label>
                         <input type="text" id="productinfo" name="productinfo" 
-                               placeholder="Product description"
-                               value="<%= request.getParameter("productinfo") != null ? request.getParameter("productinfo") : "" %>" 
-                               required>
+                               placeholder="Product description" required>
                     </div>
                 </div>
                 
@@ -880,9 +874,7 @@ Examples:
                             Amount
                         </label>
                         <input type="text" id="amount" name="amount" 
-                               placeholder="10.00"
-                               value="<%= request.getParameter("amount") != null ? request.getParameter("amount") : "" %>" 
-                               required>
+                               placeholder="10.00" required>
                     </div>
                     <div class="input-group">
                         <label for="txnid">
@@ -890,9 +882,7 @@ Examples:
                             Transaction ID
                         </label>
                         <input type="text" id="txnid" name="txnid" 
-                               placeholder="Unique transaction identifier"
-                               value="<%= request.getParameter("txnid") != null ? request.getParameter("txnid") : "" %>" 
-                               required>
+                               placeholder="Unique transaction identifier" required>
                     </div>
                 </div>
                 
@@ -903,9 +893,7 @@ Examples:
                             Merchant Key
                         </label>
                         <input type="text" id="key" name="key" 
-                               placeholder="PayU merchant key"
-                               value="<%= request.getParameter("key") != null ? request.getParameter("key") : "" %>" 
-                               required>
+                               placeholder="PayU merchant key" required>
                     </div>
                     <div class="input-group">
                         <label for="responseHash">
@@ -913,9 +901,7 @@ Examples:
                             Response Hash
                         </label>
                         <input type="text" id="responseHash" name="responseHash" 
-                               placeholder="Hash received in PayU response"
-                               value="<%= request.getParameter("hash") != null ? request.getParameter("hash") : "" %>" 
-                               required>
+                               placeholder="Hash received in PayU response" required>
                     </div>
                 </div>
                 
